@@ -33,14 +33,14 @@ func main() {
 	}
 
 	conn, err := sql.Open("postgres", dbURL)
-	if err != nil{
+	if err != nil {
 		log.Fatal("Can't connect to database:", err)
 	}
 
 	apiCfg := apiConfig{
-		DB:database.New(conn),
+		DB: database.New(conn),
 	}
-	
+
 	router := chi.NewRouter()
 
 	router.Use(cors.Handler(cors.Options{
@@ -56,14 +56,15 @@ func main() {
 	v1Router.Get("/healthz", handlerReadiness)
 	v1Router.Get("/err", handlerErr)
 	v1Router.Post("/users", apiCfg.handlerCreateUser)
-	v1Router.Get("/users", apiCfg.handlerGetUser)
+	v1Router.Get("/users", apiCfg.middlewareauth(apiCfg.handlerGetUser))
+	v1Router.Post("/feeds", apiCfg.middlewareauth(apiCfg.handlerCreateFeed))
+	v1Router.Get("/feeds", apiCfg.handlerGetFeeds)
 
 	router.Mount("/v1", v1Router)
 
-
 	srv := &http.Server{
 		Handler: router,
-		Addr: ":" + portString,
+		Addr:    ":" + portString,
 	}
 
 	log.Printf("Server starting on port %v", portString)
@@ -73,5 +74,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 }
